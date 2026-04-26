@@ -1,0 +1,401 @@
+{
+  "_note": "LG 스스로 해결 카테고리 시드. 대분류 14개는 LG 사이트에서 자동 확보. 서브카테고리는 사용자가 LG 사이트에서 제품 선택 후 URL의 subCategory/productCode 값을 보고 등록.",
+  "categories": [
+    {
+      "id": "CT50019441",
+      "nameKo": "냉장고/김치냉장고",
+      "nameEn": "Refrigerator/Kimchi",
+      "subcategories": [
+        {
+          "id": "CT50019468",
+          "productCode": "SISBS",
+          "nameKo": "양문형 냉장고",
+          "nameEn": "Side-by-side Refrigerator"
+        },
+        {
+          "id": "CT50019483",
+          "productCode": "",
+          "nameKo": "일반형 냉장고",
+          "nameEn": "일반형 냉장고"
+        },
+        {
+          "id": "CT50019442",
+          "productCode": "",
+          "nameKo": "스탠드형 김치냉장고",
+          "nameEn": "스탠드형 김치냉장고"
+        },
+        {
+          "id": "CT50109005",
+          "productCode": "",
+          "nameKo": "뚜껑형  김치냉장고",
+          "nameEn": "뚜껑형  김치냉장고"
+        },
+        {
+          "id": "CT50019455",
+          "productCode": "",
+          "nameKo": "와인셀러",
+          "nameEn": "와인셀러"
+        }
+      ]
+    },
+    {
+      "id": "CT50019183",
+      "nameKo": "에어컨/환기",
+      "nameEn": "Air Conditioner/Ventilation",
+      "subcategories": [
+        {
+          "id": "CT50019184",
+          "productCode": "",
+          "nameKo": "2in1 에어컨",
+          "nameEn": "2in1 에어컨"
+        },
+        {
+          "id": "CT50019214",
+          "productCode": "",
+          "nameKo": "벽걸이형 에어컨",
+          "nameEn": "벽걸이형 에어컨"
+        },
+        {
+          "id": "CT50019199",
+          "productCode": "",
+          "nameKo": "스탠드형 에어컨",
+          "nameEn": "스탠드형 에어컨"
+        },
+        {
+          "id": "CT50019259",
+          "productCode": "",
+          "nameKo": "상업용 천장형 에어컨",
+          "nameEn": "상업용 천장형 에어컨"
+        },
+        {
+          "id": "CT50019244",
+          "productCode": "",
+          "nameKo": "상업용 스탠드 에어컨",
+          "nameEn": "상업용 스탠드 에어컨"
+        },
+        {
+          "id": "CT50019229",
+          "productCode": "",
+          "nameKo": "이동식 에어컨",
+          "nameEn": "이동식 에어컨"
+        },
+        {
+          "id": "CT50108006",
+          "productCode": "",
+          "nameKo": "창호형 에어컨",
+          "nameEn": "창호형 에어컨"
+        }
+      ]
+    },
+    {
+      "id": "CT50019274",
+      "nameKo": "세탁기/건조기/의류관리기",
+      "nameEn": "Washer/Dryer/Styler",
+      "subcategories": [
+        {
+          "id": "CT50019309",
+          "productCode": "",
+          "nameKo": "드럼세탁기",
+          "nameEn": "드럼세탁기"
+        },
+        {
+          "id": "CT50019324",
+          "productCode": "",
+          "nameKo": "통돌이",
+          "nameEn": "통돌이"
+        },
+        {
+          "id": "CT50019275",
+          "productCode": "",
+          "nameKo": "의류건조기",
+          "nameEn": "의류건조기"
+        },
+        {
+          "id": "CT50019292",
+          "productCode": "",
+          "nameKo": "의류관리기",
+          "nameEn": "의류관리기"
+        }
+      ]
+    },
+    {
+      "id": "CT50019021",
+      "nameKo": "TV / 프로젝터",
+      "nameEn": "TV / Projector",
+      "subcategories": [
+        {
+          "id": "CT50019037",
+          "productCode": "",
+          "nameKo": "올레드 TV",
+          "nameEn": "올레드 TV"
+        },
+        {
+          "id": "CT50019082",
+          "productCode": "",
+          "nameKo": "울트라 HD TV",
+          "nameEn": "울트라 HD TV"
+        },
+        {
+          "id": "CT50019052",
+          "productCode": "",
+          "nameKo": "일반 LED TV",
+          "nameEn": "일반 LED TV"
+        },
+        {
+          "id": "CT50019022",
+          "productCode": "",
+          "nameKo": "시네빔",
+          "nameEn": "시네빔"
+        }
+      ]
+    },
+    {
+      "id": "CT50019563",
+      "nameKo": "노트북/모니터",
+      "nameEn": "Laptop/Monitor",
+      "subcategories": [
+        {
+          "id": "CT50019564",
+          "productCode": "",
+          "nameKo": "그램/노트북",
+          "nameEn": "그램/노트북"
+        },
+        {
+          "id": "CT50019616",
+          "productCode": "",
+          "nameKo": "프린터/사무기기",
+          "nameEn": "프린터/사무기기"
+        },
+        {
+          "id": "CT50019585",
+          "productCode": "",
+          "nameKo": "일체형/데스크톱",
+          "nameEn": "일체형/데스크톱"
+        },
+        {
+          "id": "CT50019602",
+          "productCode": "",
+          "nameKo": "PC 모니터",
+          "nameEn": "PC 모니터"
+        }
+      ]
+    },
+    {
+      "id": "CT50019695",
+      "nameKo": "주방가전",
+      "nameEn": "Kitchen Appliances",
+      "subcategories": [
+        {
+          "id": "CT50019735",
+          "productCode": "",
+          "nameKo": "식기세척기",
+          "nameEn": "식기세척기"
+        },
+        {
+          "id": "CT50019648",
+          "productCode": "",
+          "nameKo": "정수기",
+          "nameEn": "정수기"
+        },
+        {
+          "id": "CT50019709",
+          "productCode": "",
+          "nameKo": "전자레인지",
+          "nameEn": "전자레인지"
+        },
+        {
+          "id": "CT50019761",
+          "productCode": "",
+          "nameKo": "전기레인지/인덕션",
+          "nameEn": "전기레인지/인덕션"
+        },
+        {
+          "id": "CT50019696",
+          "productCode": "",
+          "nameKo": "광파오븐레인지",
+          "nameEn": "광파오븐레인지"
+        },
+        {
+          "id": "CT50019722",
+          "productCode": "",
+          "nameKo": "가스오븐레인지",
+          "nameEn": "가스오븐레인지"
+        },
+        {
+          "id": "CT50019748",
+          "productCode": "",
+          "nameKo": "가스레인지",
+          "nameEn": "가스레인지"
+        },
+        {
+          "id": "CT50019774",
+          "productCode": "",
+          "nameKo": "맥주제조기",
+          "nameEn": "맥주제조기"
+        }
+      ]
+    },
+    {
+      "id": "CT50019339",
+      "nameKo": "청소기",
+      "nameEn": "Vacuum",
+      "subcategories": [
+        {
+          "id": "CT50019400",
+          "productCode": "",
+          "nameKo": "무선청소기",
+          "nameEn": "무선청소기"
+        },
+        {
+          "id": "CT50019380",
+          "productCode": "",
+          "nameKo": "유선청소기",
+          "nameEn": "유선청소기"
+        },
+        {
+          "id": "CT50019340",
+          "productCode": "",
+          "nameKo": "로봇청소기",
+          "nameEn": "로봇청소기"
+        }
+      ]
+    },
+    {
+      "id": "CT50019872",
+      "nameKo": "에어케어",
+      "nameEn": "Air Care",
+      "subcategories": [
+        {
+          "id": "CT50019873",
+          "productCode": "",
+          "nameKo": "공기청정기",
+          "nameEn": "공기청정기"
+        },
+        {
+          "id": "CT50019888",
+          "productCode": "",
+          "nameKo": "휴대용 공기청정기",
+          "nameEn": "휴대용 공기청정기"
+        },
+        {
+          "id": "CT50019890",
+          "productCode": "",
+          "nameKo": "제습기",
+          "nameEn": "제습기"
+        },
+        {
+          "id": "CT50019904",
+          "productCode": "",
+          "nameKo": "가습기",
+          "nameEn": "가습기"
+        },
+        {
+          "id": "CT50111012",
+          "productCode": "",
+          "nameKo": "에어로타워",
+          "nameEn": "에어로타워"
+        },
+        {
+          "id": "CT50111013",
+          "productCode": "",
+          "nameKo": "에어로퍼니처",
+          "nameEn": "에어로퍼니처"
+        },
+        {
+          "id": "CT50019889",
+          "productCode": "",
+          "nameKo": "실링팬",
+          "nameEn": "실링팬"
+        }
+      ]
+    },
+    {
+      "id": "CT50019920",
+      "nameKo": "뷰티/의료기기",
+      "nameEn": "Beauty/Medical",
+      "subcategories": [
+        {
+          "id": "CT50019921",
+          "productCode": "",
+          "nameKo": "클렌징 기기",
+          "nameEn": "클렌징 기기"
+        },
+        {
+          "id": "CT50019932",
+          "productCode": "",
+          "nameKo": "메디헤어",
+          "nameEn": "메디헤어"
+        }
+      ]
+    },
+    {
+      "id": "CT50288000",
+      "nameKo": "AI Home 제품",
+      "nameEn": "AI Home Products",
+      "subcategories": []
+    },
+    {
+      "id": "CT50019511",
+      "nameKo": "AV/음향기기",
+      "nameEn": "AV/Audio",
+      "subcategories": [
+        {
+          "id": "CT50019512",
+          "productCode": "",
+          "nameKo": "사운드바",
+          "nameEn": "사운드바"
+        },
+        {
+          "id": "CT50019527",
+          "productCode": "",
+          "nameKo": "무선 스피커",
+          "nameEn": "무선 스피커"
+        },
+        {
+          "id": "CT50019543",
+          "productCode": "",
+          "nameKo": "오디오/플레이어",
+          "nameEn": "오디오/플레이어"
+        },
+        {
+          "id": "CT50019836",
+          "productCode": "",
+          "nameKo": "블루투스 이어폰",
+          "nameEn": "블루투스 이어폰"
+        }
+      ]
+    },
+    {
+      "id": "CT50071000",
+      "nameKo": "생활가전 기타",
+      "nameEn": "Other Home Appliances",
+      "subcategories": [
+        {
+          "id": "CT50071001",
+          "productCode": "",
+          "nameKo": "틔운",
+          "nameEn": "틔운"
+        }
+      ]
+    },
+    {
+      "id": "CT50019647",
+      "nameKo": "헬스케어",
+      "nameEn": "Healthcare",
+      "subcategories": [
+        {
+          "id": "CT50019680",
+          "productCode": "",
+          "nameKo": "안마의자",
+          "nameEn": "안마의자"
+        }
+      ]
+    },
+    {
+      "id": "CT50019784",
+      "nameKo": "기타",
+      "nameEn": "Other",
+      "subcategories": []
+    }
+  ]
+}

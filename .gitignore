@@ -1,0 +1,23 @@
+node_modules
+dist
+*.log
+.DS_Store
+.vscode
+.idea
+
+# Secrets — never commit
+.env
+.env.local
+.env.deploy
+*.token
+
+# Local data — keep schema files in repo, ignore actual data
+data/*.json
+!data/categories.json
+!data/.gitkeep
+
+# Misc dev/runtime files
+server.log
+dev.log
+scripts/dedup_test.mjs
+scripts/naver_debug.mjs

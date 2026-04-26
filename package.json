@@ -1,0 +1,39 @@
+{
+  "name": "lgblog",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "LG전자서비스 블로그 콘텐츠 관리 시스템",
+  "scripts": {
+    "dev": "concurrently -n web,api -c blue,magenta \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "vite",
+    "dev:api": "tsx watch server/index.ts",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "start": "tsx server/index.ts",
+    "migrate:json-to-pg": "tsx scripts/migrate-json-to-pg.ts",
+    "db:init": "tsx scripts/db-init.ts"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "pg": "^8.20.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.19.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.4",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "concurrently": "^9.0.1",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8"
+  }
+}
