@@ -65,6 +65,34 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return intersect / (a.size + b.size - intersect);
 }
 
+// Appliance keywords per top-level LG category. Used to BLOCK cross-product
+// matches (e.g. TV article matching against 에어컨 blog post just because both
+// share "전원이 꺼지지 않아요"). Keywords are matched against the lowercased title
+// as substrings — they should be specific enough not to clash.
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  CT50019441: ['냉장고', '김치냉장고', '디오스', '얼음정수기'],
+  CT50019183: ['에어컨', '휘센', '실외기'],
+  CT50019274: ['세탁기', '드럼세탁기', '드럼', '통돌이', '건조기', '스타일러', '의류관리기', '워시타워', '트롬'],
+  CT50019021: ['tv', '티비', '시네빔', '올레드 tv', '울트라 hd', '프로젝터'],
+  CT50019563: ['노트북', '그램', '모니터', '데스크톱', '프린터', 'pc'],
+  CT50019695: ['식기세척기', '정수기', '전자레인지', '인덕션', '오븐', '가스레인지', '광파오븐', '맥주제조기', '디오스 식기세척기'],
+  CT50019339: ['청소기', '코드제로', '로봇청소기'],
+  CT50019872: ['공기청정기', '제습기', '가습기', '에어로타워', '에어로퍼니처', '에어로부스터', '실링팬', '월핏', '몽블랑', '퓨리케어', '에어케어'],
+  CT50019920: ['프라엘', '뷰티', '의료기기'],
+  CT50288000: ['ai home', 'ai홈'],
+  CT50019511: ['스피커', '사운드바', '엑스붐', '톤프리', '이어폰', '헤드폰'],
+  CT50071000: [],
+  CT50019647: ['안마의자', '브리이즈', '헬스케어'],
+  CT50019784: [],
+};
+
+function titleMentionsAppliance(title: string, categoryId: string): boolean {
+  const keywords = CATEGORY_KEYWORDS[categoryId];
+  if (!keywords || keywords.length === 0) return true; // unknown category, don't block
+  const lower = title.toLowerCase();
+  return keywords.some((k) => lower.includes(k));
+}
+
 // Korean stopwords — tokens too common/conversational to be discriminating signals.
 const STOPWORDS = new Set<string>([
   'lg', 'lg전자', '엘지', '엘지전자',
@@ -257,6 +285,9 @@ export function assessRisk(
 
     for (const entry of index.fuzzyEntries) {
       if (hits.some((h) => h.blogPost.postId === entry.post.postId)) continue;
+      // Cross-product guard: blog title must mention an appliance that fits the
+      // LG article's category. Blocks "TV 전원" ↔ "에어컨 전원" type false matches.
+      if (!titleMentionsAppliance(entry.post.title, article.categoryId)) continue;
 
       // (i) substring containment first (cheap)
       let sim: number | null = null;
