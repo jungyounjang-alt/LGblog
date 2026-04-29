@@ -20,5 +20,11 @@ data/*.json
 # Misc dev/runtime files
 server.log
 dev.log
+prod.log
 scripts/dedup_test.mjs
+scripts/dedup_fuzzy_test.mjs
 scripts/naver_debug.mjs
+scripts/count_real_matches.mjs
+scripts/trace_match.mjs
+scripts/unmatched_analysis.mjs
+scripts/unmatched_analysis2.mjs

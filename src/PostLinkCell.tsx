@@ -62,27 +62,25 @@ export function PostLinkCell({ lang, seqId, matchedPost, matchSource, onChanged 
           placeholder={t.placeholder}
           disabled={busy}
         />
-        <div className="row">
-          <button
-            type="button"
-            disabled={busy || !input}
-            onClick={() => call('POST', 'link-blog', { url: input.trim() })}
-          >
-            {busy ? t.saving : 'Enter'}
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            onClick={() => {
-              setEditing(false);
-              setInput('');
-            }}
-          >
-            취소
-          </button>
-        </div>
-        {error && <div className="inline-error">{error}</div>}
+        <button
+          type="button"
+          disabled={busy || !input}
+          onClick={() => call('POST', 'link-blog', { url: input.trim() })}
+        >
+          {busy ? '…' : '↵'}
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy}
+          onClick={() => {
+            setEditing(false);
+            setInput('');
+          }}
+        >
+          ✕
+        </button>
+        {error && <span className="inline-error">{error}</span>}
       </div>
     );
   }
@@ -90,60 +88,53 @@ export function PostLinkCell({ lang, seqId, matchedPost, matchSource, onChanged 
   // Confirmed (explicit mapping)
   if (matchedPost && matchSource === 'confirmed') {
     return (
-      <div className="post-link-cell confirmed">
+      <span className="post-link-cell confirmed">
         <a href={matchedPost.url} target="_blank" rel="noreferrer" className="link">
-          {matchedPost.publishedAt ?? '✓'}{' '}
-          <span className="muted small">·{matchedPost.postId.slice(-6)}</span>
+          {matchedPost.publishedAt ?? '✓'}
         </a>
-        <div className="row small-actions">
-          <button type="button" className="link-btn" onClick={startEdit} disabled={busy}>
-            {t.editBtn}
-          </button>
-          <button
-            type="button"
-            className="link-btn warn"
-            onClick={() => call('PUT', 'unlink-blog')}
-            disabled={busy}
-          >
-            {t.unlinkBtn}
-          </button>
-        </div>
-      </div>
+        <button type="button" className="link-btn" onClick={startEdit} disabled={busy} title={t.editBtn}>
+          ✏
+        </button>
+        <button
+          type="button"
+          className="link-btn warn"
+          onClick={() => call('PUT', 'unlink-blog')}
+          disabled={busy}
+          title={t.unlinkBtn}
+        >
+          ✕
+        </button>
+      </span>
     );
   }
 
   // Auto-suggested (title match, not yet confirmed)
   if (matchedPost && matchSource === 'title_match') {
     return (
-      <div className="post-link-cell suggested">
+      <span className="post-link-cell suggested">
         <a href={matchedPost.url} target="_blank" rel="noreferrer" className="link suggested-link">
-          {matchedPost.publishedAt ?? '?'}{' '}
-          <span className="muted small">· {t.suggested}</span>
+          {matchedPost.publishedAt ?? '?'}
         </a>
-        <div className="row small-actions">
-          <button
-            type="button"
-            className="link-btn confirm-btn"
-            onClick={() => call('POST', 'link-blog', { postId: matchedPost.postId })}
-            disabled={busy}
-          >
-            {busy ? t.saving : t.confirmBtn}
-          </button>
-          <button type="button" className="link-btn" onClick={startEdit} disabled={busy}>
-            {t.editBtn}
-          </button>
-        </div>
-        {error && <div className="inline-error">{error}</div>}
-      </div>
+        <button
+          type="button"
+          className="link-btn confirm-btn"
+          onClick={() => call('POST', 'link-blog', { postId: matchedPost.postId })}
+          disabled={busy}
+        >
+          {busy ? '…' : t.confirmBtn}
+        </button>
+        <button type="button" className="link-btn" onClick={startEdit} disabled={busy} title={t.editBtn}>
+          ✏
+        </button>
+        {error && <span className="inline-error">{error}</span>}
+      </span>
     );
   }
 
   // Empty — no match, ready to paste
   return (
-    <div className="post-link-cell empty">
-      <button type="button" className="add-link-btn" onClick={startEdit}>
-        + URL
-      </button>
-    </div>
+    <button type="button" className="add-link-btn" onClick={startEdit}>
+      + URL
+    </button>
   );
 }

@@ -68,9 +68,9 @@ export interface Settings {
 }
 
 export interface DedupHit {
-  kind: 'seq_id' | 'title_normalized' | 'body_cosine';
+  kind: 'seq_id' | 'title_normalized' | 'title_fuzzy' | 'body_cosine';
   blogPost: BlogPost;
-  similarity?: number;            // body_cosine일 때만
+  similarity?: number;            // title_fuzzy / body_cosine일 때
   daysSincePublished: number | null;
 }
 

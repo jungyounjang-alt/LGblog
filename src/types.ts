@@ -66,7 +66,7 @@ export interface BlogPost {
 }
 
 export interface DedupHit {
-  kind: 'seq_id' | 'title_normalized' | 'body_cosine';
+  kind: 'seq_id' | 'title_normalized' | 'title_fuzzy' | 'body_cosine';
   blogPost: BlogPost;
   similarity?: number;
   daysSincePublished: number | null;

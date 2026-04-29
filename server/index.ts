@@ -2,7 +2,6 @@ import cors from 'cors';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { adminOnly, adminOrPartner, getRole } from './auth.js';
 import {
   crawlAllCategories,
   crawlSubcategory,
@@ -38,20 +37,12 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// Tells the client what role its token grants. UI uses this to hide admin actions for partners.
-app.get('/api/me', (req, res) => {
-  res.json({ role: getRole(req) });
-});
-
-// All other /api/* routes need at least partner role.
-app.use('/api', adminOrPartner);
-
 app.get('/api/categories', async (_req, res) => {
   res.json(await store.getCategories());
 });
 
 // 서브카테고리 추가 — 사용자가 LG 사이트에서 URL 보고 등록
-app.post('/api/categories/:categoryId/subcategories', adminOnly, async (req, res) => {
+app.post('/api/categories/:categoryId/subcategories', async (req, res) => {
   try {
     const { categoryId } = req.params;
     const { id, productCode, nameKo, nameEn } = req.body ?? {};
@@ -73,7 +64,7 @@ app.post('/api/categories/:categoryId/subcategories', adminOnly, async (req, res
 });
 
 // 서브카테고리 삭제
-app.delete('/api/categories/:categoryId/subcategories/:subId', adminOnly, async (req, res) => {
+app.delete('/api/categories/:categoryId/subcategories/:subId', async (req, res) => {
   try {
     const cats = await store.getCategories();
     const cat = cats.find((c) => c.id === req.params.categoryId);
@@ -121,7 +112,7 @@ app.get('/api/notifications/settings', async (_req, res) => {
   res.json(await getNotificationSettings());
 });
 
-app.put('/api/notifications/settings', adminOnly, async (req, res) => {
+app.put('/api/notifications/settings', async (req, res) => {
   const next = await saveNotificationSettings(req.body ?? {});
   res.json(next);
 });
@@ -136,7 +127,115 @@ app.get('/api/seasonal', async (_req, res) => {
   res.json(buildSeasonal(blogPosts));
 });
 
-app.post('/api/notifications/test', adminOnly, async (_req, res) => {
+// 대시보드 통계: 카테고리별 발행 건수 + 인기 콘텐츠
+app.get('/api/stats', async (_req, res) => {
+  const [articles, blogPosts, categories] = await Promise.all([
+    store.getSourceArticles(),
+    store.getBlogPosts(),
+    store.getCategories(),
+  ]);
+  const blogIndex = buildBlogIndex(blogPosts);
+
+  // 1) Build blog post → LG category map.
+  //    Priority: confirmed sourceSeqId mapping > auto-match (any title hit)
+  const articleById = new Map(articles.map((a) => [a.seqId, a]));
+  const blogToCategoryId = new Map<string, string>(); // postId → categoryId
+
+  // confirmed
+  for (const p of blogPosts) {
+    if (p.sourceSeqId && articleById.has(p.sourceSeqId)) {
+      blogToCategoryId.set(p.postId, articleById.get(p.sourceSeqId)!.categoryId);
+    }
+  }
+  // auto-match (any title hit)
+  for (const a of articles) {
+    if (blogToCategoryId.size >= blogPosts.length) break;
+    const risk = assessRisk(a, blogPosts, { index: blogIndex });
+    for (const h of risk.hits) {
+      if (!blogToCategoryId.has(h.blogPost.postId)) {
+        blogToCategoryId.set(h.blogPost.postId, a.categoryId);
+      }
+    }
+  }
+
+  function rankByCategory(filter?: (b: BlogPost) => boolean) {
+    const counts = new Map<string, number>();
+    let unmapped = 0;
+    for (const p of blogPosts) {
+      if (filter && !filter(p)) continue;
+      const cid = blogToCategoryId.get(p.postId);
+      if (cid) counts.set(cid, (counts.get(cid) ?? 0) + 1);
+      else unmapped++;
+    }
+    const ranked = [...counts.entries()]
+      .map(([id, count]) => {
+        const cat = categories.find((c) => c.id === id);
+        return { categoryId: id, nameKo: cat?.nameKo ?? id, count };
+      })
+      .sort((a, b) => b.count - a.count);
+    return { ranked, unmapped };
+  }
+
+  const now = Date.now();
+  const day = 86400 * 1000;
+  function within(p: BlogPost, days: number): boolean {
+    if (!p.publishedAt) return false;
+    return now - Date.parse(p.publishedAt) <= days * day;
+  }
+
+  const allCategoryRank = rankByCategory();
+  const last30CategoryRank = {
+    ranked: rankByCategory((p) => within(p, 30)).ranked.slice(0, 5),
+    unmapped: rankByCategory((p) => within(p, 30)).unmapped,
+  };
+  const last90CategoryRank = {
+    ranked: rankByCategory((p) => within(p, 90)).ranked.slice(0, 5),
+    unmapped: rankByCategory((p) => within(p, 90)).unmapped,
+  };
+
+  // Top viewed LG articles (substitute for blog views — blog viewing data not available)
+  function parseView(v: string | null): number {
+    if (!v) return 0;
+    return Number(v.replace(/,/g, '')) || 0;
+  }
+  const topByView = (limit: number) =>
+    articles
+      .filter((a) => parseView(a.view) > 0)
+      .sort((a, b) => parseView(b.view) - parseView(a.view))
+      .slice(0, limit)
+      .map((a) => {
+        const confirmed = blogIndex.bySourceSeq.get(a.seqId) ?? null;
+        const fallback =
+          !confirmed
+            ? assessRisk(a, blogPosts, { index: blogIndex }).hits[0]?.blogPost ?? null
+            : null;
+        const matched = confirmed ?? fallback;
+        return {
+          article: { seqId: a.seqId, title: a.title, url: a.url, cateName: a.cateName },
+          view: parseView(a.view),
+          matchedBlogPost: matched
+            ? { title: matched.title, url: matched.url, publishedAt: matched.publishedAt }
+            : null,
+        };
+      });
+
+  res.json({
+    categoryRank: {
+      all: allCategoryRank,
+      last30: last30CategoryRank,
+      last90: last90CategoryRank,
+    },
+    topViewed: topByView(5),
+    blogViewsAvailable: false,
+    totals: {
+      blogPosts: blogPosts.length,
+      mapped: blogToCategoryId.size,
+      unmapped: blogPosts.length - blogToCategoryId.size,
+    },
+  });
+});
+
+app.post('/api/notifications/test', async (_req, res) => {
   const n = await emitNotification({
     kind: 'publish_request',
     title: '[테스트] 알림 전송 확인',
@@ -242,7 +341,7 @@ async function runSyncAll(): Promise<void> {
   }
 }
 
-app.post('/api/sync-all', adminOnly, (_req, res) => {
+app.post('/api/sync-all', (_req, res) => {
   if (syncJob.state === 'running') {
     return res.status(409).json({ error: 'already running', job: syncJob });
   }
@@ -256,7 +355,7 @@ app.get('/api/sync-all/status', (_req, res) => {
 });
 
 // LG 스스로 해결 크롤 — 단일 서브카테고리 (PoC) 또는 전체
-app.post('/api/crawl/lge', adminOnly, async (req, res) => {
+app.post('/api/crawl/lge', async (req, res) => {
   try {
     const { categoryId, subcategoryId, productCode, maxPages } = req.body ?? {};
     let articles;
@@ -333,7 +432,7 @@ async function runBackfillAll(blogId: string, maxPages: number, maxCategoryNo: n
   }
 }
 
-app.post('/api/backfill/naver', adminOnly, async (req, res) => {
+app.post('/api/backfill/naver', async (req, res) => {
   try {
     const { blogId, categoryNo, maxPages, maxCategoryNo } = req.body ?? {};
     if (!blogId) return res.status(400).json({ error: 'blogId is required' });
@@ -562,8 +661,14 @@ app.get('/api/dashboard', async (_req, res) => {
   const rows = articles.map((a) => {
     const publishedBlogPost = blogIndex.bySourceSeq.get(a.seqId) ?? null;
     const risk = assessRisk(a, blogPosts, { index: blogIndex });
-    const titleMatchHit = risk.hits.find((h) => h.kind === 'title_normalized');
-    // matchedPost: confirmed mapping > title-normalized auto-match > null
+    // Strict match wins; fuzzy match only if no strict match.
+    const strictHit = risk.hits.find((h) => h.kind === 'title_normalized');
+    const fuzzyHit = !strictHit
+      ? risk.hits
+          .filter((h) => h.kind === 'title_fuzzy')
+          .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))[0]
+      : undefined;
+    const titleMatchHit = strictHit ?? fuzzyHit;
     const matchedPost: BlogPost | null =
       publishedBlogPost ?? titleMatchHit?.blogPost ?? null;
     const matchSource: 'confirmed' | 'title_match' | null = publishedBlogPost
@@ -604,7 +709,5 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = Number(process.env.PORT ?? 3001);
 app.listen(PORT, () => {
   const mode = process.env.DATABASE_URL ? 'postgres' : 'json-files';
-  const auth =
-    process.env.ADMIN_TOKEN || process.env.PARTNER_TOKEN ? 'token-required' : 'open (dev)';
-  console.log(`[api] listening on http://localhost:${PORT}  storage=${mode}  auth=${auth}`);
+  console.log(`[api] listening on http://localhost:${PORT}  storage=${mode}`);
 });

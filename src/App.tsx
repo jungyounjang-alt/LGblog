@@ -1,27 +1,43 @@
 import { useEffect, useState } from 'react';
-import { fetchRole, type Role } from './authClient';
-import { CategoryManager } from './CategoryManager';
-import { NotificationsPanel } from './NotificationsPanel';
+import { Pagination } from './Pagination';
 import { PostLinkCell } from './PostLinkCell';
-import { SeasonalPanel } from './SeasonalPanel';
+import { SeasonalCalendar } from './SeasonalCalendar';
+import { StatsPanel } from './StatsPanel';
 import { STRINGS, type Lang } from './i18n';
 import type { Category, DashboardResponse, Settings } from './types';
 
 type CrawlStatus = { busy: boolean; message: string | null };
 
 export function App() {
-  const [lang, setLang] = useState<Lang>('ko');
+  const lang: Lang = 'ko';
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [crawl, setCrawl] = useState<CrawlStatus>({ busy: false, message: null });
-  const [showCatManager, setShowCatManager] = useState(false);
-  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<'todo' | 'published' | 'all'>('todo');
-  const [role, setRole] = useState<Role>('admin');
+  const [statusFilter, setStatusFilter] = useState<'todo' | 'published' | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'risk' | 'published' | 'postLink' | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  function toggleSort(col: 'risk' | 'published' | 'postLink') {
+    if (sortBy !== col) {
+      setSortBy(col);
+      setSortDir('desc');
+    } else if (sortDir === 'desc') {
+      setSortDir('asc');
+    } else {
+      setSortBy(null);
+    }
+    setPage(1);
+  }
+  const sortIndicator = (col: 'risk' | 'published' | 'postLink') =>
+    sortBy === col ? (sortDir === 'desc' ? ' ▼' : ' ▲') : '';
 
   const t = STRINGS[lang];
+  const PAGE_SIZE = 30;
 
   async function loadAll() {
     const [d, c, s] = await Promise.all([
@@ -36,11 +52,8 @@ export function App() {
   }
 
   useEffect(() => {
-    void fetchRole().then(setRole);
     void loadAll();
   }, []);
-
-  const isAdmin = role === 'admin';
 
   async function runSyncAll() {
     setCrawl({ busy: true, message: '시작 중…' });
@@ -86,58 +99,21 @@ export function App() {
     }
   }
 
-  async function toggleAck(seqId: string, current: boolean) {
-    try {
-      await fetch(`/api/source-articles/${seqId}/workflow`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acknowledged: !current }),
-      });
-      await loadAll();
-    } catch (err) {
-      console.error('toggleAck failed', err);
-    }
-  }
 
   async function runBackfill() {
-    const blogId = window.prompt('네이버 블로그 ID', 'lgeservice_kr');
-    if (!blogId) return;
-    const categoryNo = window.prompt(
-      '카테고리 번호 (비우면 1..50 전체 카테고리 자동 순회)',
-      '',
-    );
-    const maxPagesInput = window.prompt(
-      categoryNo
-        ? '최대 페이지 수 (기본 30)'
-        : '카테고리당 최대 페이지 수 (기본 30)',
-      '30',
-    );
-    const maxPages = Number(maxPagesInput) || 30;
-
-    setCrawl({ busy: true, message: '시작 중…' });
+    setCrawl({ busy: true, message: '블로그 sync 시작 중…' });
     try {
       const res = await fetch('/api/backfill/naver', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          blogId,
-          categoryNo: categoryNo || undefined,
-          maxPages,
-          maxCategoryNo: categoryNo ? undefined : 50,
+          blogId: 'lgeservice_kr',
+          maxPages: 30,
+          maxCategoryNo: 50,
         }),
       });
       const j = await res.json();
       if (!res.ok && res.status !== 409) throw new Error(j.error ?? 'failed');
-
-      // Single-category synchronous mode: response has totals immediately
-      if (j.mode !== 'background' && categoryNo) {
-        setCrawl({
-          busy: false,
-          message: `완료: 신규 ${j.added} · 갱신 ${j.updated} (총 ${j.fetched} 수집)`,
-        });
-        await loadAll();
-        return;
-      }
 
       // Background mode: poll status
       let polls = 0;
@@ -179,22 +155,6 @@ export function App() {
           <h1>{t.appTitle}</h1>
           <p className="tagline">{t.tagline}</p>
         </div>
-        <div className="lang-switch">
-          <button
-            className={lang === 'ko' ? 'active' : ''}
-            onClick={() => setLang('ko')}
-            type="button"
-          >
-            한국어
-          </button>
-          <button
-            className={lang === 'en' ? 'active' : ''}
-            onClick={() => setLang('en')}
-            type="button"
-          >
-            English
-          </button>
-        </div>
       </header>
 
       <section className="summary">
@@ -225,82 +185,82 @@ export function App() {
       </section>
 
       <section className="actions">
-        {isAdmin && (
-          <>
-            <button
-              onClick={runSyncAll}
-              disabled={crawl.busy}
-              type="button"
-              className="primary-btn"
-              title={t.actions.syncAllHint}
-            >
-              {t.actions.syncAll}
-            </button>
-            <button onClick={runBackfill} disabled={crawl.busy} type="button">
-              {t.actions.backfillNaver}
-            </button>
-            <button onClick={() => setShowNotifPanel(true)} disabled={crawl.busy} type="button">
-              {t.actions.notifications}
-            </button>
-            <button
-              onClick={() => setShowCatManager(true)}
-              disabled={crawl.busy}
-              type="button"
-              className="muted-btn"
-            >
-              {t.actions.manageCategories}
-            </button>
-          </>
-        )}
+        <button
+          onClick={runSyncAll}
+          disabled={crawl.busy}
+          type="button"
+          className="primary-btn"
+          title={t.actions.syncAllHint}
+        >
+          {t.actions.syncAll}
+        </button>
+        <button
+          onClick={runBackfill}
+          disabled={crawl.busy}
+          type="button"
+          title={t.actions.backfillHint}
+        >
+          {t.actions.backfillNaver}
+        </button>
         <button onClick={loadAll} disabled={crawl.busy} type="button" className="muted-btn">
           {t.actions.refresh}
         </button>
-        {role === 'partner' && (
-          <span className="role-pill">협력업체 모드</span>
-        )}
         {crawl.message && <span className="status">{crawl.message}</span>}
       </section>
 
-      {showCatManager && (
-        <CategoryManager
-          lang={lang}
-          categories={categories}
-          onClose={() => setShowCatManager(false)}
-          onChanged={loadAll}
-        />
-      )}
-
-      {showNotifPanel && (
-        <NotificationsPanel lang={lang} onClose={() => setShowNotifPanel(false)} />
-      )}
-
-      <SeasonalPanel lang={lang} refreshKey={refreshKey} />
+      <SeasonalCalendar refreshKey={refreshKey} />
 
       {(() => {
         const allRows = dashboard?.rows ?? [];
-        const isTodo = (r: typeof allRows[number]) =>
-          r.effectiveStatus !== 'published' && !r.article.workflow?.acknowledged;
-        const todoCount = allRows.filter(isTodo).length;
-        const doneCount = allRows.length - todoCount;
+        // 미발행 = 포스팅 링크 없는 행 (matchedPost null)
+        // 포스팅 완료 = 포스팅 링크 있는 행 (확정 매핑 + 자동 매칭 모두 포함)
+        const isPosted = (r: typeof allRows[number]) => r.matchedPost !== null;
 
-        // Status priority for sort: requested > in_progress > review > pending > published
-        const STATUS_PRIORITY: Record<string, number> = {
-          requested: 0,
-          in_progress: 1,
-          review: 2,
-          pending: 3,
-          published: 4,
-        };
-        const filtered = allRows
+        const q = searchQuery.trim().toLowerCase();
+        const inCategory = (r: typeof allRows[number]) =>
+          categoryFilter === 'all' || r.article.categoryId === categoryFilter;
+        const matchesSearch = (r: typeof allRows[number]) =>
+          !q || r.article.title.toLowerCase().includes(q);
+        const scoped = allRows.filter((r) => inCategory(r) && matchesSearch(r));
+        const postedCount = scoped.filter(isPosted).length;
+        const todoCount = scoped.length - postedCount;
+
+        const categoryCounts = new Map<string, number>();
+        for (const r of allRows) {
+          categoryCounts.set(
+            r.article.categoryId,
+            (categoryCounts.get(r.article.categoryId) ?? 0) + 1,
+          );
+        }
+
+        const RISK_RANK: Record<string, number> = { red: 4, yellow: 3, green: 2, none: 1 };
+        const dir = sortDir === 'desc' ? -1 : 1;
+
+        const filtered = scoped
           .filter((r) => {
-            if (statusFilter === 'todo') return isTodo(r);
-            if (statusFilter === 'published') return !isTodo(r);
+            if (statusFilter === 'todo') return !isPosted(r);
+            if (statusFilter === 'published') return isPosted(r);
             return true;
           })
           .slice()
           .sort((a, b) => {
-            const dp = STATUS_PRIORITY[a.effectiveStatus] - STATUS_PRIORITY[b.effectiveStatus];
-            if (dp !== 0) return dp;
+            // Custom sort if active
+            if (sortBy === 'risk') {
+              const diff = (RISK_RANK[a.risk.level] ?? 0) - (RISK_RANK[b.risk.level] ?? 0);
+              if (diff !== 0) return -diff * dir;
+            } else if (sortBy === 'published') {
+              const da = a.article.publishedAt ?? '';
+              const db = b.article.publishedAt ?? '';
+              if (da !== db) return -da.localeCompare(db) * dir;
+            } else if (sortBy === 'postLink') {
+              const da = a.matchedPost?.publishedAt ?? '';
+              const db = b.matchedPost?.publishedAt ?? '';
+              // Empty postLink dates always go to bottom regardless of direction
+              if (!da && db) return 1;
+              if (da && !db) return -1;
+              if (da !== db) return -da.localeCompare(db) * dir;
+            }
+            // Default: original article publishedAt desc
             const da = a.article.publishedAt ?? '';
             const db = b.article.publishedAt ?? '';
             return db.localeCompare(da);
@@ -311,57 +271,124 @@ export function App() {
             <header className="dash-head">
               <h2>
                 {t.todo.title}{' '}
-                <span className="todo-count-pill">{t.todo.count(todoCount)}</span>
+                <span className="todo-count-pill">{t.todo.count(scoped.length)}</span>
               </h2>
+              <div className="search-wrap">
+                <input
+                  type="search"
+                  className="search-input"
+                  placeholder="제목 검색…"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setPage(1);
+                    }}
+                    title="검색어 지우기"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
               <div className="filter-chips">
                 <button
                   type="button"
+                  className={statusFilter === 'all' ? 'chip active' : 'chip'}
+                  onClick={() => { setStatusFilter('all'); setPage(1); }}
+                >
+                  {t.todo.filterAll} ({scoped.length})
+                </button>
+                <button
+                  type="button"
                   className={statusFilter === 'todo' ? 'chip active' : 'chip'}
-                  onClick={() => setStatusFilter('todo')}
+                  onClick={() => { setStatusFilter('todo'); setPage(1); }}
                 >
                   {t.todo.filterTodo} ({todoCount})
                 </button>
                 <button
                   type="button"
                   className={statusFilter === 'published' ? 'chip active' : 'chip'}
-                  onClick={() => setStatusFilter('published')}
+                  onClick={() => { setStatusFilter('published'); setPage(1); }}
                 >
-                  {t.todo.filterPublished} ({doneCount})
-                </button>
-                <button
-                  type="button"
-                  className={statusFilter === 'all' ? 'chip active' : 'chip'}
-                  onClick={() => setStatusFilter('all')}
-                >
-                  {t.todo.filterAll} ({allRows.length})
+                  {t.todo.filterPublished} ({postedCount})
                 </button>
               </div>
             </header>
 
+            <div className="category-row">
+              <span className="filter-label">카테고리:</span>
+              <div className="filter-chips category-chips">
+                <button
+                  type="button"
+                  className={categoryFilter === 'all' ? 'chip active' : 'chip'}
+                  onClick={() => { setCategoryFilter('all'); setPage(1); }}
+                >
+                  전체 ({allRows.length.toLocaleString()})
+                </button>
+                {categories
+                  .filter((c) => (categoryCounts.get(c.id) ?? 0) > 0)
+                  .map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={categoryFilter === c.id ? 'chip active' : 'chip'}
+                      onClick={() => { setCategoryFilter(c.id); setPage(1); }}
+                    >
+                      {lang === 'ko' ? c.nameKo : c.nameEn} ({categoryCounts.get(c.id) ?? 0})
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            {(() => {
+              const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+              const safePage = Math.min(page, totalPages);
+              const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+              return (
+            <>
             {filtered.length === 0 ? (
               <p className="empty">{t.empty.sources}</p>
             ) : (
               <table className="rows">
                 <thead>
                   <tr>
-                    <th>{t.cols.risk}</th>
-                    <th>{t.cols.status}</th>
+                    <th
+                      className={'sortable' + (sortBy === 'risk' ? ' active' : '')}
+                      onClick={() => toggleSort('risk')}
+                    >
+                      {t.cols.risk}{sortIndicator('risk')}
+                    </th>
                     <th>{t.cols.title}</th>
                     <th>{t.cols.category}</th>
-                    <th>{t.cols.published}</th>
-                    <th>{t.cols.postLink}</th>
-                    <th className="ack-th">{t.cols.ack}</th>
+                    <th
+                      className={'sortable' + (sortBy === 'published' ? ' active' : '')}
+                      onClick={() => toggleSort('published')}
+                    >
+                      {t.cols.published}{sortIndicator('published')}
+                    </th>
+                    <th
+                      className={'sortable' + (sortBy === 'postLink' ? ' active' : '')}
+                      onClick={() => toggleSort('postLink')}
+                    >
+                      {t.cols.postLink}{sortIndicator('postLink')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((row) => {
-                    const status = row.effectiveStatus;
+                  {paged.map((row) => {
                     const dangerous = row.risk.level === 'red';
-                    const acked = !!row.article.workflow?.acknowledged;
                     return (
                       <tr
                         key={row.article.seqId}
-                        className={dangerous ? 'row-dangerous' : acked ? 'row-acked' : ''}
+                        className={dangerous ? 'row-dangerous' : ''}
                       >
                         <td>
                           <span className={`risk risk-${row.risk.level}`}>
@@ -374,16 +401,15 @@ export function App() {
                             </span>
                           </span>
                         </td>
-                        <td>
-                          <span className={`status-badge st-${status}`}>{t.status[status]}</span>
-                        </td>
-                        <td>
-                          <a href={row.article.url} target="_blank" rel="noreferrer">
+                        <td className="title-cell">
+                          <a href={row.article.url} target="_blank" rel="noreferrer" className="title-link">
                             {row.article.title}
                           </a>
-                          <div className="reason">{row.risk.reason}</div>
+                          {row.risk.reason && row.risk.level !== 'none' && (
+                            <span className="reason"> · {row.risk.reason}</span>
+                          )}
                           {row.article.workflow?.memo && (
-                            <div className="memo">📝 {row.article.workflow.memo}</div>
+                            <span className="memo-inline" title={row.article.workflow.memo}>📝</span>
                           )}
                         </td>
                         <td className="muted">{row.article.cateName}</td>
@@ -397,25 +423,32 @@ export function App() {
                             onChanged={loadAll}
                           />
                         </td>
-                        <td className="ack-td">
-                          <label className="ack-toggle" title={lang === 'ko' ? '확인 완료로 표시' : 'Mark as reviewed'}>
-                            <input
-                              type="checkbox"
-                              checked={acked}
-                              onChange={() => toggleAck(row.article.seqId, acked)}
-                            />
-                          </label>
-                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             )}
+            {filtered.length > PAGE_SIZE && (
+              <Pagination
+                page={safePage}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                pageSize={PAGE_SIZE}
+                onChange={(p) => {
+                  setPage(p);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            )}
+            </>
+              );
+            })()}
           </section>
         );
       })()}
 
+      <StatsPanel lang={lang} refreshKey={refreshKey} />
     </div>
   );
 }
